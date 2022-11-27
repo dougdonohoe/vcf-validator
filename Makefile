@@ -19,8 +19,12 @@ BUILDER ?= builder-local
 # vcf-validator version (assumed to be a git tag)
 VCF_VALIDATOR_VERSION ?= 0.9.4
 
-# TAG
-TAG = $(REPO_NAME)/vcf-validator:$(VCF_VALIDATOR_VERSION)
+# odb version
+ODB_VERSION ?= 2.5.0-b.23
+
+# Tags
+VCF_TAG = $(REPO_NAME)/vcf-validator:$(VCF_VALIDATOR_VERSION)
+ODB_TAG = $(REPO_NAME)/odb:$(ODB_VERSION)
 
 require_repo_name:
 ifndef REPO_NAME
@@ -29,10 +33,17 @@ endif
 
 ## build: build using local architecture
 build: require_repo_name
-	@echo '=> Build $(TAG)...'
+	@echo '=> Build $(VCF_TAG)...'
 	$(DOCKER) build --file Dockerfile \
 		--build-arg VCF_VALIDATOR_VERSION=$(VCF_VALIDATOR_VERSION) \
-		--pull --tag $(TAG) .
+		--pull --tag $(VCF_TAG) .
+
+## build-odb: build odb using local architecture
+build-odb: require_repo_name
+	@echo '=> Build $(ODB_TAG)...'
+	$(DOCKER) build --file Dockerfile-odb \
+		--build-arg ODB_VERSION=$(ODB_VERSION) \
+		--pull --tag $(ODB_TAG) .
 
 # common setup for buildx tasks
 buildx-setup: require_repo_name
@@ -47,10 +58,10 @@ buildx-setup: require_repo_name
 
 ## buildx-publish: build and publish the multi-architecture image (amd64|arm64)
 buildx-publish: require_repo_name buildx-setup
-	@echo '=> Build and publish multi-arch image $(TAG)...'
+	@echo '=> Build and publish multi-arch image $(VCF_TAG)...'
 	$(DOCKER) buildx build --file Dockerfile \
 		--platform $(PLATFORMS) \
 		--builder $(BUILDER) \
 		--build-arg VCF_VALIDATOR_VERSION=$(VCF_VALIDATOR_VERSION) \
 		--progress plain \
-		--pull --push --tag $(TAG) .
+		--pull --push --tag $(VCF_TAG) .
